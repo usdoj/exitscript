@@ -19,12 +19,12 @@ var simpleModal = require('simple-modal');
 function exitscript(options) {
 
   // Find all links.
-  var links = document.querySelectorAll('a');
+  var links = document.querySelectorAll('a[href]');
 
   // Keep track of the auto-hyperlink timer on this variable.
   var timer;
 
-  links.forEach(function(link) {
+  [].forEach.call(links, function(link) {
 
     // First a simple external check.
     if (externalLink(link)) {
