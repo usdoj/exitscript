@@ -1,0 +1,23 @@
+{
+  "name": "exitscript",
+  "version": "1.0.0",
+  "description": "A warning popup for users who click external links to non-government sites.",
+  "main": "exit-script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usdoj/exitscript.git"
+  },
+  "author": "brockfanning@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/usdoj/exitscript/issues"
+  },
+  "homepage": "https://github.com/usdoj/exitscript#readme",
+  "dependencies": {
+    "external-link": "^2.0.0",
+    "simple-modal": "^1.0.1"
+  }
+}
