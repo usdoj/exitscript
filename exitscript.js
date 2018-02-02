@@ -1,704 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.exitscript = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-// Instantiate our npm/node helpers.
-var externalLink = require('external-link');
-var url = require('url');
-var simpleModal = require('simple-modal');
 
-/**
- * Find all non-government external links on the page and give them popup
- * warning behavior.
- *
- * @param options
- *   An object containing ALL of the following properties (generic examples shown):
- *     title: 'My popup title',
- *     warning: 'You are now leaving our site.',
- *     logo: 'https://example.com/path/to/logo/image.jpg',
- *     blurb: 'Here is what you should know about leaving our site...',
- *     thanks: 'Thank you for visiting our site.'
- */
-function exitscript(options) {
-
-  // Find all links.
-  var links = document.querySelectorAll('a[href]');
-
-  // Keep track of the auto-hyperlink timer on this variable.
-  var timer;
-
-  [].forEach.call(links, function(link) {
-
-    // First a simple external check.
-    if (externalLink(link)) {
-
-      var href = link.getAttribute('href');
-
-      // Don't override .gov, .mil, or .fed.us
-      var domain = url.parse(href).hostname;
-      if (!domain.match(/(\.gov|\.mil|fed\.us)$/)) {
-
-        // Add the click behavior.
-        link.addEventListener('click', function(e) {
-
-          // Use some external click behavior?
-          if (typeof options.click !== 'undefined') {
-            options.click(href);
-          }
-
-          // Otherwise use this library.
-          else {
-            // Our mostly hardcoded popup HTML.
-            var content = "\
-              <div>\
-                <p style='text-align:center'><img src='" + options.logo + "' /></p>\
-                <p>" + options.warning + "</p>\
-                <p>You are about to access: <a href='" + href + "'>" + href + "</a></p>\
-                <p>" + options.blurb + "</p>\
-                <p>" + options.thanks + "</p>\
-              </div>\
-            ";
-
-            // Show the modal.
-            var modal = simpleModal({
-              title: options.title,
-              content: content,
-              buttons: [],
-              onClose: function() { clearTimeout(timer); }
-            });
-            modal.show();
-
-            // Visit the href automatically in 5 seconds.
-            timer = setTimeout(function() {
-              window.location.href = href;
-            }, 5000);
-          }
-
-          // Always prevent normal link behavior.
-          e.stopPropagation();
-          e.preventDefault();
-        }, false);
-      }
-    }
-  });
-}
-
-// Expose the exitscript() function to the global space.
-module.exports = exitscript;
-
-},{"external-link":2,"simple-modal":3,"url":13}],2:[function(require,module,exports){
-'use strict';
-
-function external(node) {
-  if (!node || !node.getAttribute) return false;
-
-  if (node.getAttribute('target') && node.getAttribute('target') !== '_self') return true;
-
-  if (node.getAttribute('rel') === 'external') return true;
-
-  var link = node.getAttribute('href');
-
-  // tel or mailto or https
-  if (link.match(/^\w+:/)) return true;
-
-  // protocoless
-  if (link.match(/^\/\//)) return true;
-
-  return false;
-}
-
-module.exports = external;
-
-},{}],3:[function(require,module,exports){
-var ModalStyle, template;
-
-require('./style.css');
-
-module.exports = function(opts) {
-  var modal;
-  if (opts == null) {
-    opts = {};
-  }
-  modal = new ModalStyle(opts);
-  return modal;
-};
-
-template = require('./modal.jade');
-
-ModalStyle = (function() {
-  function ModalStyle(o) {
-    var button, buttonDefaults, opt, prop, v, val, _i, _len;
-    this.m = {};
-    this.last = null;
-    this.opts = {
-      title: '',
-      content: 'What would you like to do?',
-      buttons: [
-        {
-          text: 'Cancel',
-          closeOnClick: true
-        }, {
-          text: 'Confirm',
-          className: 'btn-primary',
-          closeOnClick: true
-        }
-      ],
-      clickOutsideToClose: true,
-      hideOtherModals: true,
-      removeOnClose: true,
-      onClose: function() {},
-      attachToBody: true,
-      width: '0px',
-      minWidth: '560px',
-      maxHeight: 0,
-      minHeight: '0px'
-    };
-    buttonDefaults = {
-      closeOnClick: true
-    };
-    for (opt in o) {
-      val = o[opt];
-      this.opts[opt] = val;
-      if (opt === 'buttons') {
-        for (_i = 0, _len = val.length; _i < _len; _i++) {
-          button = val[_i];
-          for (prop in buttonDefaults) {
-            v = buttonDefaults[prop];
-            if (button[prop] == null) {
-              button[prop] = v;
-            }
-          }
-        }
-      }
-    }
-    this.build();
-  }
-
-  ModalStyle.prototype.build = function() {
-    var b, bg, body, content, controls, i, item, maxHeight, self, _i, _len;
-    self = this;
-    this.m = document.createElement('div');
-    this.m.className = 'simple-modal-holder';
-    this.m.innerHTML = template(this.opts);
-    this.updateContent(this.opts.content);
-    body = this.m.querySelector('.simple-modal-body');
-    content = this.m.querySelector('.simple-modal-content');
-    if (this.opts.width) {
-      body.style.width = this.opts.width;
-    }
-    if (this.opts.minWidth) {
-      body.style.minWidth = this.opts.minWidth;
-    }
-    if (this.opts.maxHeight > 0) {
-      content.style.maxHeight = this.opts.maxHeight + "px";
-    } else {
-      maxHeight = window.innerHeight * .7;
-      content.style.maxHeight = maxHeight + "px";
-    }
-    if (this.opts.minHeight) {
-      content.style.minHeight = this.opts.minHeight;
-    }
-    controls = this.m.querySelectorAll('.simple-modal-controls>button');
-    for (i = _i = 0, _len = controls.length; _i < _len; i = ++_i) {
-      b = controls[i];
-      if (this.opts.buttons[i] != null) {
-        item = this.opts.buttons[i];
-        b.setAttribute('data-index', i);
-        if (item.callback != null) {
-          b.onclick = function(e) {
-            var bdata, index;
-            index = e.target.getAttribute('data-index');
-            bdata = self.opts.buttons[index];
-            bdata.callback(e);
-            if (bdata.closeOnClick) {
-              return self.close();
-            }
-          };
-        } else {
-          b.onclick = function(e) {
-            var bdata, index;
-            index = e.target.getAttribute('data-index');
-            bdata = self.opts.buttons[index];
-            if (bdata.closeOnClick) {
-              return self.close();
-            }
-          };
-        }
-      }
-    }
-    if (this.opts.clickOutsideToClose) {
-      bg = this.m.querySelector('.simple-modal-overlay');
-      bg.onclick = function() {
-        return self.close();
-      };
-    }
-    if (this.opts.attachToBody) {
-      document.body.appendChild(this.m);
-    }
-    return this.show();
-  };
-
-  ModalStyle.prototype.updateContent = function(new_content, replace_existing) {
-    var c;
-    if (replace_existing == null) {
-      replace_existing = true;
-    }
-    c = this.m.querySelector('.simple-modal-content');
-    if (replace_existing) {
-      c.innerHTML = '';
-    }
-    if (typeof new_content === 'string') {
-      return c.innerHTML = c.innerHTML + new_content;
-    } else {
-      return c.appendChild(new_content);
-    }
-  };
-
-  ModalStyle.prototype.updateHeader = function(new_header, replace_existing) {
-    var c;
-    if (replace_existing == null) {
-      replace_existing = true;
-    }
-    c = this.m.querySelector('.simple-modal-title');
-    if (replace_existing) {
-      c.innerHTML = '';
-    }
-    if (typeof new_header === 'string') {
-      return c.innerHTML = c.innerHTML + new_header;
-    } else {
-      return c.appendChild(new_header);
-    }
-  };
-
-  ModalStyle.prototype.deconstruct = function() {
-    if (this.m) {
-      this.m.parentNode.removeChild(this.m);
-      return this.m = null;
-    }
-  };
-
-  ModalStyle.prototype.close = function() {
-    if (this.opts.hideOtherModals && this.last) {
-      this.last.style.display = 'block';
-    }
-    if (this.m) {
-      this.opts.onClose();
-      if (this.opts.removeOnClose) {
-        return this.deconstruct();
-      } else {
-        return this.m.style.display = 'none';
-      }
-    }
-  };
-
-  ModalStyle.prototype.show = function() {
-    var other, others, _i, _len;
-    if (this.opts.hideOtherModals) {
-      others = document.body.querySelectorAll('.simple-modal-holder');
-      for (_i = 0, _len = others.length; _i < _len; _i++) {
-        other = others[_i];
-        if (other.style.display === 'block') {
-          this.last = other;
-        }
-        other.style.display = 'none';
-      }
-    }
-    if (this.m) {
-      return this.m.style.display = 'block';
-    }
-  };
-
-  ModalStyle.prototype.hide = function() {
-    if (this.opts.hideOtherModals && this.last) {
-      this.last.style.display = 'block';
-    }
-    if (this.m) {
-      return this.m.style.display = 'none';
-    }
-  };
-
-  return ModalStyle;
-
-})();
-
-},{"./modal.jade":4,"./style.css":5}],4:[function(require,module,exports){
-var jade = require("jade/runtime");
-
-module.exports = function template(locals) {
-var buf = [];
-var jade_mixins = {};
-var jade_interp;
-;var locals_for_with = (locals || {});(function (buttons, title, undefined) {
-buf.push("<div class=\"simple-modal-overlay\"></div><div class=\"simple-modal-body\">");
-if (( title ))
-{
-buf.push("<h1 class=\"simple-modal-title\">" + (jade.escape((jade_interp = title) == null ? '' : jade_interp)) + "</h1>");
-}
-buf.push("<div class=\"simple-modal-content\"></div>");
-if (( buttons.length ))
-{
-buf.push("<div class=\"simple-modal-controls\">");
-// iterate buttons
-;(function(){
-  var $$obj = buttons;
-  if ('number' == typeof $$obj.length) {
-
-    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
-      var button = $$obj[$index];
-
-buf.push("<button" + (jade.cls(['btn','simple-modal-btn',button.className], [null,null,true])) + ">" + (jade.escape((jade_interp = button.text) == null ? '' : jade_interp)) + "</button>");
-    }
-
-  } else {
-    var $$l = 0;
-    for (var $index in $$obj) {
-      $$l++;      var button = $$obj[$index];
-
-buf.push("<button" + (jade.cls(['btn','simple-modal-btn',button.className], [null,null,true])) + ">" + (jade.escape((jade_interp = button.text) == null ? '' : jade_interp)) + "</button>");
-    }
-
-  }
-}).call(this);
-
-buf.push("</div>");
-}
-buf.push("</div>");}.call(this,"buttons" in locals_for_with?locals_for_with.buttons:typeof buttons!=="undefined"?buttons:undefined,"title" in locals_for_with?locals_for_with.title:typeof title!=="undefined"?title:undefined,"undefined" in locals_for_with?locals_for_with.undefined:typeof undefined!=="undefined"?undefined:undefined));;return buf.join("");
-};
-},{"jade/runtime":7}],5:[function(require,module,exports){
-var css = '\
-\
-.simple-modal-body {\
-  position: fixed;\
-  top: 10%;\
-  left: 50%;\
-  z-index: 1051;\
-  margin-left: -280px;\
-  background-color: #ffffff;\
-  border: 1px solid rgba(0, 0, 0, 0.3);\
-  -webkit-border-radius: 6px;\
-  -moz-border-radius: 6px;\
-  border-radius: 6px;\
-  outline: none;\
-  -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
-  -moz-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
-  -webkit-background-clip: padding-box;\
-  -moz-background-clip: padding-box;\
-  background-clip: padding-box;\
-  padding: 20px;\
-}\
-\
-.simple-modal-title {\
-  margin: 0px 0px 0px 0px;\
-  padding-bottom: 5px;\
-  border-bottom: 1px solid #eee;\
-}\
-\
-.simple-modal-content {\
-  margin: 15px 0px 15px 0px;\
-  overflow: auto;\
-}\
-\
-.simple-modal-btn {\
-  margin: 5px;\
-}\
-\
-.simple-modal-controls {\
-  text-align: right;\
-}\
-\
-\
-.simple-modal-overlay {\
-  opacity: 0.8;\
-  position: fixed;\
-  top: 0;\
-  right: 0;\
-  bottom: 0;\
-  left: 0;\
-  z-index: 1050;\
-  background-color: #000000;\
-}\
-'; (require("C:\\Users\\bfanning\\.babun\\cygwin\\home\\bfanning\\repos\\github\\usdoj\\exitscript\\node_modules\\simple-modal\\node_modules\\cssify"))(css); module.exports = css;
-},{"C:\\Users\\bfanning\\.babun\\cygwin\\home\\bfanning\\repos\\github\\usdoj\\exitscript\\node_modules\\simple-modal\\node_modules\\cssify":6}],6:[function(require,module,exports){
-module.exports = function (css) {
-  var head = document.getElementsByTagName('head')[0],
-      style = document.createElement('style');
-
-  style.type = 'text/css';
-
-  if (style.styleSheet) {
-    style.styleSheet.cssText = css;
-  } else {
-    style.appendChild(document.createTextNode(css));
-  }
-  
-  head.appendChild(style);
-};
-
-module.exports.byUrl = function(url) {
-  var head = document.getElementsByTagName('head')[0],
-      link = document.createElement('link');
-
-  link.rel = 'stylesheet';
-  link.href = url;
-  
-  head.appendChild(link);
-};
-},{}],7:[function(require,module,exports){
-(function (global){
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.jade = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
-
-/**
- * Merge two attribute objects giving precedence
- * to values in object `b`. Classes are special-cased
- * allowing for arrays and merging/joining appropriately
- * resulting in a string.
- *
- * @param {Object} a
- * @param {Object} b
- * @return {Object} a
- * @api private
- */
-
-exports.merge = function merge(a, b) {
-  if (arguments.length === 1) {
-    var attrs = a[0];
-    for (var i = 1; i < a.length; i++) {
-      attrs = merge(attrs, a[i]);
-    }
-    return attrs;
-  }
-  var ac = a['class'];
-  var bc = b['class'];
-
-  if (ac || bc) {
-    ac = ac || [];
-    bc = bc || [];
-    if (!Array.isArray(ac)) ac = [ac];
-    if (!Array.isArray(bc)) bc = [bc];
-    a['class'] = ac.concat(bc).filter(nulls);
-  }
-
-  for (var key in b) {
-    if (key != 'class') {
-      a[key] = b[key];
-    }
-  }
-
-  return a;
-};
-
-/**
- * Filter null `val`s.
- *
- * @param {*} val
- * @return {Boolean}
- * @api private
- */
-
-function nulls(val) {
-  return val != null && val !== '';
-}
-
-/**
- * join array as classes.
- *
- * @param {*} val
- * @return {String}
- */
-exports.joinClasses = joinClasses;
-function joinClasses(val) {
-  return (Array.isArray(val) ? val.map(joinClasses) :
-    (val && typeof val === 'object') ? Object.keys(val).filter(function (key) { return val[key]; }) :
-    [val]).filter(nulls).join(' ');
-}
-
-/**
- * Render the given classes.
- *
- * @param {Array} classes
- * @param {Array.<Boolean>} escaped
- * @return {String}
- */
-exports.cls = function cls(classes, escaped) {
-  var buf = [];
-  for (var i = 0; i < classes.length; i++) {
-    if (escaped && escaped[i]) {
-      buf.push(exports.escape(joinClasses([classes[i]])));
-    } else {
-      buf.push(joinClasses(classes[i]));
-    }
-  }
-  var text = joinClasses(buf);
-  if (text.length) {
-    return ' class="' + text + '"';
-  } else {
-    return '';
-  }
-};
-
-
-exports.style = function (val) {
-  if (val && typeof val === 'object') {
-    return Object.keys(val).map(function (style) {
-      return style + ':' + val[style];
-    }).join(';');
-  } else {
-    return val;
-  }
-};
-/**
- * Render the given attribute.
- *
- * @param {String} key
- * @param {String} val
- * @param {Boolean} escaped
- * @param {Boolean} terse
- * @return {String}
- */
-exports.attr = function attr(key, val, escaped, terse) {
-  if (key === 'style') {
-    val = exports.style(val);
-  }
-  if ('boolean' == typeof val || null == val) {
-    if (val) {
-      return ' ' + (terse ? key : key + '="' + key + '"');
-    } else {
-      return '';
-    }
-  } else if (0 == key.indexOf('data') && 'string' != typeof val) {
-    if (JSON.stringify(val).indexOf('&') !== -1) {
-      console.warn('Since Jade 2.0.0, ampersands (`&`) in data attributes ' +
-                   'will be escaped to `&amp;`');
-    };
-    if (val && typeof val.toISOString === 'function') {
-      console.warn('Jade will eliminate the double quotes around dates in ' +
-                   'ISO form after 2.0.0');
-    }
-    return ' ' + key + "='" + JSON.stringify(val).replace(/'/g, '&apos;') + "'";
-  } else if (escaped) {
-    if (val && typeof val.toISOString === 'function') {
-      console.warn('Jade will stringify dates in ISO form after 2.0.0');
-    }
-    return ' ' + key + '="' + exports.escape(val) + '"';
-  } else {
-    if (val && typeof val.toISOString === 'function') {
-      console.warn('Jade will stringify dates in ISO form after 2.0.0');
-    }
-    return ' ' + key + '="' + val + '"';
-  }
-};
-
-/**
- * Render the given attributes object.
- *
- * @param {Object} obj
- * @param {Object} escaped
- * @return {String}
- */
-exports.attrs = function attrs(obj, terse){
-  var buf = [];
-
-  var keys = Object.keys(obj);
-
-  if (keys.length) {
-    for (var i = 0; i < keys.length; ++i) {
-      var key = keys[i]
-        , val = obj[key];
-
-      if ('class' == key) {
-        if (val = joinClasses(val)) {
-          buf.push(' ' + key + '="' + val + '"');
-        }
-      } else {
-        buf.push(exports.attr(key, val, false, terse));
-      }
-    }
-  }
-
-  return buf.join('');
-};
-
-/**
- * Escape the given string of `html`.
- *
- * @param {String} html
- * @return {String}
- * @api private
- */
-
-var jade_encode_html_rules = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;'
-};
-var jade_match_html = /[&<>"]/g;
-
-function jade_encode_char(c) {
-  return jade_encode_html_rules[c] || c;
-}
-
-exports.escape = jade_escape;
-function jade_escape(html){
-  var result = String(html).replace(jade_match_html, jade_encode_char);
-  if (result === '' + html) return html;
-  else return result;
-};
-
-/**
- * Re-throw the given `err` in context to the
- * the jade in `filename` at the given `lineno`.
- *
- * @param {Error} err
- * @param {String} filename
- * @param {String} lineno
- * @api private
- */
-
-exports.rethrow = function rethrow(err, filename, lineno, str){
-  if (!(err instanceof Error)) throw err;
-  if ((typeof window != 'undefined' || !filename) && !str) {
-    err.message += ' on line ' + lineno;
-    throw err;
-  }
-  try {
-    str = str || require('fs').readFileSync(filename, 'utf8')
-  } catch (ex) {
-    rethrow(err, null, lineno)
-  }
-  var context = 3
-    , lines = str.split('\n')
-    , start = Math.max(lineno - context, 0)
-    , end = Math.min(lines.length, lineno + context);
-
-  // Error context
-  var context = lines.slice(start, end).map(function(line, i){
-    var curr = i + start + 1;
-    return (curr == lineno ? '  > ' : '    ')
-      + curr
-      + '| '
-      + line;
-  }).join('\n');
-
-  // Alter exception message
-  err.path = filename;
-  err.message = (filename || 'Jade') + ':' + lineno
-    + '\n' + context + '\n\n' + err.message;
-  throw err;
-};
-
-exports.DebugItem = function DebugItem(lineno, filename) {
-  this.lineno = lineno;
-  this.filename = filename;
-}
-
-},{"fs":2}],2:[function(require,module,exports){
-
-},{}]},{},[1])(1)
-});
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"fs":8}],8:[function(require,module,exports){
-
-},{}],9:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -1235,7 +537,7 @@ exports.DebugItem = function DebugItem(lineno, filename) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1321,7 +623,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],11:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1408,13 +710,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":10,"./encode":11}],13:[function(require,module,exports){
+},{"./decode":3,"./encode":4}],6:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -2148,7 +1450,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":14,"punycode":9,"querystring":12}],14:[function(require,module,exports){
+},{"./util":7,"punycode":2,"querystring":5}],7:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -2166,5 +1468,715 @@ module.exports = {
   }
 };
 
+},{}],8:[function(require,module,exports){
+// Instantiate our npm/node helpers.
+var externalLink = require('external-link');
+var url = require('url');
+var simpleModal = require('simple-modal');
+
+/**
+ * Find all non-government external links on the page and give them popup
+ * warning behavior.
+ *
+ * @param options
+ *   An object containing ALL of the following properties (generic examples shown):
+ *     title: 'My popup title',
+ *     content: '<p>This is my popup content. The external link is {url}.</p>'
+ *       Notes: This can be any chunk of HTML, but note that the string "{url}"
+ *       will be replaced with an actual clickable link to the external target.
+ *     click: mySeparatePopupCallback
+ *       Notes: Normally this library displays a popup, but if this 'click'
+ *       property contains a callback function, instead that callback function
+ *       will trigger, and is expected to provide all functionality.
+ *     delay: 5
+ *       Number of seconds to wait before automatically sending the user on to
+ *       the external target.
+ */
+function exitscript(options) {
+
+  // Start with defaults.
+  var defaults = {
+    title: 'You are now leaving this agency website.',
+    content: '<p>You are about to access: {url}</p>',
+    delay: 5
+  };
+  // Use these defaults if needed.
+  for (var key in defaults) {
+    if (typeof options[key] === 'undefined') {
+      options[key] = defaults[key];
+    }
+  }
+
+  // Find all links.
+  var links = document.querySelectorAll('a[href]');
+
+  // Keep track of the auto-hyperlink timer on this variable.
+  var timer;
+
+  [].forEach.call(links, function(link) {
+
+    // First a simple external check.
+    if (externalLink(link)) {
+
+      var href = link.getAttribute('href');
+
+      // Don't override .gov, .mil, or .fed.us
+      var domain = url.parse(href).hostname;
+      if (!domain.match(/(\.gov|\.mil|fed\.us)$/)) {
+
+        // Add the click behavior.
+        link.addEventListener('click', function(e) {
+
+          // Use some external click behavior?
+          if (typeof options.click !== 'undefined') {
+            options.click(href);
+          }
+
+          // Otherwise use this library.
+          else {
+            // Our mostly hardcoded popup HTML.
+            var link = '<a href="' + href + '">' + href + '</a>';
+            var content = options.content.replace('{url}', link);
+
+            // Show the modal.
+            var modal = simpleModal({
+              title: options.title,
+              content: content,
+              buttons: [],
+              onClose: function() { clearTimeout(timer); }
+            });
+            modal.show();
+
+            // Visit the href automatically in 5 seconds.
+            timer = setTimeout(function() {
+              window.location.href = href;
+            }, 1000 * options.delay);
+          }
+
+          // Always prevent normal link behavior.
+          e.stopPropagation();
+          e.preventDefault();
+        }, false);
+      }
+    }
+  });
+}
+
+// Expose the exitscript() function to the global space.
+module.exports = exitscript;
+
+},{"external-link":9,"simple-modal":10,"url":6}],9:[function(require,module,exports){
+'use strict';
+
+function external(node) {
+  if (!node || !node.getAttribute) return false;
+
+  if (node.getAttribute('target') && node.getAttribute('target') !== '_self') return true;
+
+  if (node.getAttribute('rel') === 'external') return true;
+
+  var link = node.getAttribute('href');
+
+  // tel or mailto or https
+  if (link.match(/^\w+:/)) return true;
+
+  // protocoless
+  if (link.match(/^\/\//)) return true;
+
+  return false;
+}
+
+module.exports = external;
+
+},{}],10:[function(require,module,exports){
+var ModalStyle, template;
+
+require('./style.css');
+
+module.exports = function(opts) {
+  var modal;
+  if (opts == null) {
+    opts = {};
+  }
+  modal = new ModalStyle(opts);
+  return modal;
+};
+
+template = require('./modal.jade');
+
+ModalStyle = (function() {
+  function ModalStyle(o) {
+    var button, buttonDefaults, opt, prop, v, val, _i, _len;
+    this.m = {};
+    this.last = null;
+    this.opts = {
+      title: '',
+      content: 'What would you like to do?',
+      buttons: [
+        {
+          text: 'Cancel',
+          closeOnClick: true
+        }, {
+          text: 'Confirm',
+          className: 'btn-primary',
+          closeOnClick: true
+        }
+      ],
+      clickOutsideToClose: true,
+      hideOtherModals: true,
+      removeOnClose: true,
+      onClose: function() {},
+      attachToBody: true,
+      width: '0px',
+      minWidth: '560px',
+      maxHeight: 0,
+      minHeight: '0px'
+    };
+    buttonDefaults = {
+      closeOnClick: true
+    };
+    for (opt in o) {
+      val = o[opt];
+      this.opts[opt] = val;
+      if (opt === 'buttons') {
+        for (_i = 0, _len = val.length; _i < _len; _i++) {
+          button = val[_i];
+          for (prop in buttonDefaults) {
+            v = buttonDefaults[prop];
+            if (button[prop] == null) {
+              button[prop] = v;
+            }
+          }
+        }
+      }
+    }
+    this.build();
+  }
+
+  ModalStyle.prototype.build = function() {
+    var b, bg, body, content, controls, i, item, maxHeight, self, _i, _len;
+    self = this;
+    this.m = document.createElement('div');
+    this.m.className = 'simple-modal-holder';
+    this.m.innerHTML = template(this.opts);
+    this.updateContent(this.opts.content);
+    body = this.m.querySelector('.simple-modal-body');
+    content = this.m.querySelector('.simple-modal-content');
+    if (this.opts.width) {
+      body.style.width = this.opts.width;
+    }
+    if (this.opts.minWidth) {
+      body.style.minWidth = this.opts.minWidth;
+    }
+    if (this.opts.maxHeight > 0) {
+      content.style.maxHeight = this.opts.maxHeight + "px";
+    } else {
+      maxHeight = window.innerHeight * .7;
+      content.style.maxHeight = maxHeight + "px";
+    }
+    if (this.opts.minHeight) {
+      content.style.minHeight = this.opts.minHeight;
+    }
+    controls = this.m.querySelectorAll('.simple-modal-controls>button');
+    for (i = _i = 0, _len = controls.length; _i < _len; i = ++_i) {
+      b = controls[i];
+      if (this.opts.buttons[i] != null) {
+        item = this.opts.buttons[i];
+        b.setAttribute('data-index', i);
+        if (item.callback != null) {
+          b.onclick = function(e) {
+            var bdata, index;
+            index = e.target.getAttribute('data-index');
+            bdata = self.opts.buttons[index];
+            bdata.callback(e);
+            if (bdata.closeOnClick) {
+              return self.close();
+            }
+          };
+        } else {
+          b.onclick = function(e) {
+            var bdata, index;
+            index = e.target.getAttribute('data-index');
+            bdata = self.opts.buttons[index];
+            if (bdata.closeOnClick) {
+              return self.close();
+            }
+          };
+        }
+      }
+    }
+    if (this.opts.clickOutsideToClose) {
+      bg = this.m.querySelector('.simple-modal-overlay');
+      bg.onclick = function() {
+        return self.close();
+      };
+    }
+    if (this.opts.attachToBody) {
+      document.body.appendChild(this.m);
+    }
+    return this.show();
+  };
+
+  ModalStyle.prototype.updateContent = function(new_content, replace_existing) {
+    var c;
+    if (replace_existing == null) {
+      replace_existing = true;
+    }
+    c = this.m.querySelector('.simple-modal-content');
+    if (replace_existing) {
+      c.innerHTML = '';
+    }
+    if (typeof new_content === 'string') {
+      return c.innerHTML = c.innerHTML + new_content;
+    } else {
+      return c.appendChild(new_content);
+    }
+  };
+
+  ModalStyle.prototype.updateHeader = function(new_header, replace_existing) {
+    var c;
+    if (replace_existing == null) {
+      replace_existing = true;
+    }
+    c = this.m.querySelector('.simple-modal-title');
+    if (replace_existing) {
+      c.innerHTML = '';
+    }
+    if (typeof new_header === 'string') {
+      return c.innerHTML = c.innerHTML + new_header;
+    } else {
+      return c.appendChild(new_header);
+    }
+  };
+
+  ModalStyle.prototype.deconstruct = function() {
+    if (this.m) {
+      this.m.parentNode.removeChild(this.m);
+      return this.m = null;
+    }
+  };
+
+  ModalStyle.prototype.close = function() {
+    if (this.opts.hideOtherModals && this.last) {
+      this.last.style.display = 'block';
+    }
+    if (this.m) {
+      this.opts.onClose();
+      if (this.opts.removeOnClose) {
+        return this.deconstruct();
+      } else {
+        return this.m.style.display = 'none';
+      }
+    }
+  };
+
+  ModalStyle.prototype.show = function() {
+    var other, others, _i, _len;
+    if (this.opts.hideOtherModals) {
+      others = document.body.querySelectorAll('.simple-modal-holder');
+      for (_i = 0, _len = others.length; _i < _len; _i++) {
+        other = others[_i];
+        if (other.style.display === 'block') {
+          this.last = other;
+        }
+        other.style.display = 'none';
+      }
+    }
+    if (this.m) {
+      return this.m.style.display = 'block';
+    }
+  };
+
+  ModalStyle.prototype.hide = function() {
+    if (this.opts.hideOtherModals && this.last) {
+      this.last.style.display = 'block';
+    }
+    if (this.m) {
+      return this.m.style.display = 'none';
+    }
+  };
+
+  return ModalStyle;
+
+})();
+
+},{"./modal.jade":11,"./style.css":12}],11:[function(require,module,exports){
+var jade = require("jade/runtime");
+
+module.exports = function template(locals) {
+var buf = [];
+var jade_mixins = {};
+var jade_interp;
+;var locals_for_with = (locals || {});(function (buttons, title, undefined) {
+buf.push("<div class=\"simple-modal-overlay\"></div><div class=\"simple-modal-body\">");
+if (( title ))
+{
+buf.push("<h1 class=\"simple-modal-title\">" + (jade.escape((jade_interp = title) == null ? '' : jade_interp)) + "</h1>");
+}
+buf.push("<div class=\"simple-modal-content\"></div>");
+if (( buttons.length ))
+{
+buf.push("<div class=\"simple-modal-controls\">");
+// iterate buttons
+;(function(){
+  var $$obj = buttons;
+  if ('number' == typeof $$obj.length) {
+
+    for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
+      var button = $$obj[$index];
+
+buf.push("<button" + (jade.cls(['btn','simple-modal-btn',button.className], [null,null,true])) + ">" + (jade.escape((jade_interp = button.text) == null ? '' : jade_interp)) + "</button>");
+    }
+
+  } else {
+    var $$l = 0;
+    for (var $index in $$obj) {
+      $$l++;      var button = $$obj[$index];
+
+buf.push("<button" + (jade.cls(['btn','simple-modal-btn',button.className], [null,null,true])) + ">" + (jade.escape((jade_interp = button.text) == null ? '' : jade_interp)) + "</button>");
+    }
+
+  }
+}).call(this);
+
+buf.push("</div>");
+}
+buf.push("</div>");}.call(this,"buttons" in locals_for_with?locals_for_with.buttons:typeof buttons!=="undefined"?buttons:undefined,"title" in locals_for_with?locals_for_with.title:typeof title!=="undefined"?title:undefined,"undefined" in locals_for_with?locals_for_with.undefined:typeof undefined!=="undefined"?undefined:undefined));;return buf.join("");
+};
+},{"jade/runtime":14}],12:[function(require,module,exports){
+var css = '\
+\
+.simple-modal-body {\
+  position: fixed;\
+  top: 10%;\
+  left: 50%;\
+  z-index: 1051;\
+  margin-left: -280px;\
+  background-color: #ffffff;\
+  border: 1px solid rgba(0, 0, 0, 0.3);\
+  -webkit-border-radius: 6px;\
+  -moz-border-radius: 6px;\
+  border-radius: 6px;\
+  outline: none;\
+  -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
+  -moz-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);\
+  -webkit-background-clip: padding-box;\
+  -moz-background-clip: padding-box;\
+  background-clip: padding-box;\
+  padding: 20px;\
+}\
+\
+.simple-modal-title {\
+  margin: 0px 0px 0px 0px;\
+  padding-bottom: 5px;\
+  border-bottom: 1px solid #eee;\
+}\
+\
+.simple-modal-content {\
+  margin: 15px 0px 15px 0px;\
+  overflow: auto;\
+}\
+\
+.simple-modal-btn {\
+  margin: 5px;\
+}\
+\
+.simple-modal-controls {\
+  text-align: right;\
+}\
+\
+\
+.simple-modal-overlay {\
+  opacity: 0.8;\
+  position: fixed;\
+  top: 0;\
+  right: 0;\
+  bottom: 0;\
+  left: 0;\
+  z-index: 1050;\
+  background-color: #000000;\
+}\
+'; (require("/home/vagrant/repos/usdoj/exitscript/node_modules/simple-modal/node_modules/cssify"))(css); module.exports = css;
+},{"/home/vagrant/repos/usdoj/exitscript/node_modules/simple-modal/node_modules/cssify":13}],13:[function(require,module,exports){
+module.exports = function (css) {
+  var head = document.getElementsByTagName('head')[0],
+      style = document.createElement('style');
+
+  style.type = 'text/css';
+
+  if (style.styleSheet) {
+    style.styleSheet.cssText = css;
+  } else {
+    style.appendChild(document.createTextNode(css));
+  }
+  
+  head.appendChild(style);
+};
+
+module.exports.byUrl = function(url) {
+  var head = document.getElementsByTagName('head')[0],
+      link = document.createElement('link');
+
+  link.rel = 'stylesheet';
+  link.href = url;
+  
+  head.appendChild(link);
+};
+},{}],14:[function(require,module,exports){
+(function (global){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.jade = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
+/**
+ * Merge two attribute objects giving precedence
+ * to values in object `b`. Classes are special-cased
+ * allowing for arrays and merging/joining appropriately
+ * resulting in a string.
+ *
+ * @param {Object} a
+ * @param {Object} b
+ * @return {Object} a
+ * @api private
+ */
+
+exports.merge = function merge(a, b) {
+  if (arguments.length === 1) {
+    var attrs = a[0];
+    for (var i = 1; i < a.length; i++) {
+      attrs = merge(attrs, a[i]);
+    }
+    return attrs;
+  }
+  var ac = a['class'];
+  var bc = b['class'];
+
+  if (ac || bc) {
+    ac = ac || [];
+    bc = bc || [];
+    if (!Array.isArray(ac)) ac = [ac];
+    if (!Array.isArray(bc)) bc = [bc];
+    a['class'] = ac.concat(bc).filter(nulls);
+  }
+
+  for (var key in b) {
+    if (key != 'class') {
+      a[key] = b[key];
+    }
+  }
+
+  return a;
+};
+
+/**
+ * Filter null `val`s.
+ *
+ * @param {*} val
+ * @return {Boolean}
+ * @api private
+ */
+
+function nulls(val) {
+  return val != null && val !== '';
+}
+
+/**
+ * join array as classes.
+ *
+ * @param {*} val
+ * @return {String}
+ */
+exports.joinClasses = joinClasses;
+function joinClasses(val) {
+  return (Array.isArray(val) ? val.map(joinClasses) :
+    (val && typeof val === 'object') ? Object.keys(val).filter(function (key) { return val[key]; }) :
+    [val]).filter(nulls).join(' ');
+}
+
+/**
+ * Render the given classes.
+ *
+ * @param {Array} classes
+ * @param {Array.<Boolean>} escaped
+ * @return {String}
+ */
+exports.cls = function cls(classes, escaped) {
+  var buf = [];
+  for (var i = 0; i < classes.length; i++) {
+    if (escaped && escaped[i]) {
+      buf.push(exports.escape(joinClasses([classes[i]])));
+    } else {
+      buf.push(joinClasses(classes[i]));
+    }
+  }
+  var text = joinClasses(buf);
+  if (text.length) {
+    return ' class="' + text + '"';
+  } else {
+    return '';
+  }
+};
+
+
+exports.style = function (val) {
+  if (val && typeof val === 'object') {
+    return Object.keys(val).map(function (style) {
+      return style + ':' + val[style];
+    }).join(';');
+  } else {
+    return val;
+  }
+};
+/**
+ * Render the given attribute.
+ *
+ * @param {String} key
+ * @param {String} val
+ * @param {Boolean} escaped
+ * @param {Boolean} terse
+ * @return {String}
+ */
+exports.attr = function attr(key, val, escaped, terse) {
+  if (key === 'style') {
+    val = exports.style(val);
+  }
+  if ('boolean' == typeof val || null == val) {
+    if (val) {
+      return ' ' + (terse ? key : key + '="' + key + '"');
+    } else {
+      return '';
+    }
+  } else if (0 == key.indexOf('data') && 'string' != typeof val) {
+    if (JSON.stringify(val).indexOf('&') !== -1) {
+      console.warn('Since Jade 2.0.0, ampersands (`&`) in data attributes ' +
+                   'will be escaped to `&amp;`');
+    };
+    if (val && typeof val.toISOString === 'function') {
+      console.warn('Jade will eliminate the double quotes around dates in ' +
+                   'ISO form after 2.0.0');
+    }
+    return ' ' + key + "='" + JSON.stringify(val).replace(/'/g, '&apos;') + "'";
+  } else if (escaped) {
+    if (val && typeof val.toISOString === 'function') {
+      console.warn('Jade will stringify dates in ISO form after 2.0.0');
+    }
+    return ' ' + key + '="' + exports.escape(val) + '"';
+  } else {
+    if (val && typeof val.toISOString === 'function') {
+      console.warn('Jade will stringify dates in ISO form after 2.0.0');
+    }
+    return ' ' + key + '="' + val + '"';
+  }
+};
+
+/**
+ * Render the given attributes object.
+ *
+ * @param {Object} obj
+ * @param {Object} escaped
+ * @return {String}
+ */
+exports.attrs = function attrs(obj, terse){
+  var buf = [];
+
+  var keys = Object.keys(obj);
+
+  if (keys.length) {
+    for (var i = 0; i < keys.length; ++i) {
+      var key = keys[i]
+        , val = obj[key];
+
+      if ('class' == key) {
+        if (val = joinClasses(val)) {
+          buf.push(' ' + key + '="' + val + '"');
+        }
+      } else {
+        buf.push(exports.attr(key, val, false, terse));
+      }
+    }
+  }
+
+  return buf.join('');
+};
+
+/**
+ * Escape the given string of `html`.
+ *
+ * @param {String} html
+ * @return {String}
+ * @api private
+ */
+
+var jade_encode_html_rules = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;'
+};
+var jade_match_html = /[&<>"]/g;
+
+function jade_encode_char(c) {
+  return jade_encode_html_rules[c] || c;
+}
+
+exports.escape = jade_escape;
+function jade_escape(html){
+  var result = String(html).replace(jade_match_html, jade_encode_char);
+  if (result === '' + html) return html;
+  else return result;
+};
+
+/**
+ * Re-throw the given `err` in context to the
+ * the jade in `filename` at the given `lineno`.
+ *
+ * @param {Error} err
+ * @param {String} filename
+ * @param {String} lineno
+ * @api private
+ */
+
+exports.rethrow = function rethrow(err, filename, lineno, str){
+  if (!(err instanceof Error)) throw err;
+  if ((typeof window != 'undefined' || !filename) && !str) {
+    err.message += ' on line ' + lineno;
+    throw err;
+  }
+  try {
+    str = str || require('fs').readFileSync(filename, 'utf8')
+  } catch (ex) {
+    rethrow(err, null, lineno)
+  }
+  var context = 3
+    , lines = str.split('\n')
+    , start = Math.max(lineno - context, 0)
+    , end = Math.min(lines.length, lineno + context);
+
+  // Error context
+  var context = lines.slice(start, end).map(function(line, i){
+    var curr = i + start + 1;
+    return (curr == lineno ? '  > ' : '    ')
+      + curr
+      + '| '
+      + line;
+  }).join('\n');
+
+  // Alter exception message
+  err.path = filename;
+  err.message = (filename || 'Jade') + ':' + lineno
+    + '\n' + context + '\n\n' + err.message;
+  throw err;
+};
+
+exports.DebugItem = function DebugItem(lineno, filename) {
+  this.lineno = lineno;
+  this.filename = filename;
+}
+
+},{"fs":2}],2:[function(require,module,exports){
+
 },{}]},{},[1])(1)
+});
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"fs":1}]},{},[8])(8)
 });
