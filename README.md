@@ -9,11 +9,9 @@ Here is an example of usage. IMPORTANT: This must go at the bottom of the page, 
 <script type="text/javascript" src="../exitscript.js"></script>
 <script type="text/javascript">
   exitscript({
-    title: 'United States Department of Justice',
-    warning: 'You are now leaving a Department of Justice web site.',
-    logo: 'https://www.justice.gov/sites/all/themes/justice/images/doj-seal-popup.jpg',
-    blurb: 'The Department of Justice does not endorse the organizations or views represented by this site and takes no responsibility for, and exercises no control over, the accuracy, accessibility, copyright or trademark compliance or legality of the material contained on this site.',
-    thanks: 'Thank you for visiting our site.'
+    title: 'You are now leaving this agency website.',
+    content: '<p>You are about to access: {url}</p>',
+    delay: 5
   });
 </script>
 ```
