@@ -16,6 +16,8 @@ Here is an example of usage. IMPORTANT: This must go at the bottom of the page, 
 </script>
 ```
 
+Note the text `{url}` in the 'content' property. This is the only "dynamic" part of the content, and this text is replaced with a link to the external target.
+
 One alternative option is possible: "click", which should be a javascript function that takes an href, and handles all of the popup behavior. This is only useful for cases where you already have your own popup behavior implemented and just need this library to add it to all external non-government links. If you take this approach, the snippet would simply be:
 
 ```
