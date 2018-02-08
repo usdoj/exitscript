@@ -1,11 +1,11 @@
 {
   "name": "exitscript",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A client-side popup warning for users clicking on non-government external links.",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist; mkdirp dist; browserify lib/index.js -s exitscript > dist/exitscript.js",
+    "build": "browserify lib/index.js -s exitscript > exitscript.js",
     "prepublish": "npm run build"
   },
   "repository": {
@@ -31,8 +31,6 @@
   },
   "devDependencies": {
     "browserify": "16.0.0",
-    "jade": "1.11.0",
-    "mkdirp": "0.5.1",
-    "rimraf": "2.6.2"
+    "jade": "1.11.0"
   }
 }
