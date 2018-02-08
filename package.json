@@ -1,12 +1,12 @@
 {
   "name": "exitscript",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A client-side popup warning for users clicking on non-government external links.",
   "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist; mkdirp dist; browserify lib/index.js -s exitscript > dist/exitscript.js",
-    "install": "npm run build"
+    "postinstall": "npm run build"
   },
   "repository": {
     "type": "git",
