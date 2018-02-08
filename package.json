@@ -1,6 +1,6 @@
 {
   "name": "exitscript",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A client-side popup warning for users clicking on non-government external links.",
   "main": "lib/index.js",
   "scripts": {
