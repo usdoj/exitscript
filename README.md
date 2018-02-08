@@ -33,20 +33,14 @@ One alternative option is possible: "click", which should be a javascript functi
 
 To work on this library, you need to install [npm](http://npmjs.org).
 
-You will also need browserify:
-
-```
-npm install -g browserify
-```
-
 To get the project's dependencies, in the project's root type:
 
 ```
 npm install
 ```
 
-Then edit the exitscript-src.js file as needed. To compile the library to the user-facing exitscript.js file, type:
+Then edit the lib/index.js file as needed. To compile the library to the user-facing exitscript.js file, type:
 
 ```
-browserify lib/exitscript-src.js -s exitscript > exitscript.js
+npm run build
 ```
