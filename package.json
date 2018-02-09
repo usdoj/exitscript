@@ -1,6 +1,6 @@
 {
   "name": "exitscript",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A client-side popup warning for users clicking on non-government external links.",
   "main": "lib/index.js",
   "scripts": {
@@ -24,10 +24,11 @@
   },
   "homepage": "https://github.com/usdoj/exitscript#readme",
   "dependencies": {
-    "browserify": "16.0.0",
     "external-link": "2.0.0",
-    "jade": "1.11.0",
     "simple-modal": "2.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "browserify": "16.0.0",
+    "jade": "1.11.0"
+  }
 }
