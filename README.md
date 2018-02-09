@@ -48,5 +48,5 @@ npm install
 Then edit the lib/index.js file as needed. To compile the library to the user-facing exitscript.js file, type:
 
 ```
-npm run postinstall
+npm run build
 ```
