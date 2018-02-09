@@ -1,10 +1,10 @@
 {
   "name": "exitscript",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A client-side popup warning for users clicking on non-government external links.",
   "main": "lib/index.js",
   "scripts": {
-    "postinstall": "browserify -g uglifyify lib/index.js -s exitscript > exitscript.min.js"
+    "build": "browserify -g uglifyify lib/index.js -s exitscript > exitscript.min.js"
   },
   "repository": {
     "type": "git",
@@ -31,10 +31,5 @@
   "devDependencies": {
     "browserify": "16.0.0",
     "uglifyify": "4.0.5"
-  },
-  "browserify": {
-    "transform": [
-      "uglifyify"
-    ]
   }
 }
