@@ -1,5 +1,7 @@
 # Exit Script
 
+June 2026: This repository is being archived after many years without new contributions.
+
 A client-side popup warning for users clicking on non-government external links.
 
 # Installation
